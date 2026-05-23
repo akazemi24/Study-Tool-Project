@@ -1,23 +1,26 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from app.config import settings
-
-engine = create_async_engine(
-    settings.database_url,
-    # Set this to false in production
-    echo=True
-)
-
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+import os
 
 class Base(DeclarativeBase):
     pass
 
+def get_engine():
+    database_url = os.environ.get("DATABASE_URL", "")
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable not set")
+    return create_async_engine(database_url, echo=True)
+
+def get_session_factory(engine):
+    return sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False
+    )
+
 async def get_db():
+    engine = get_engine()
+    AsyncSessionLocal = get_session_factory(engine)
     async with AsyncSessionLocal() as session:
         try:
             yield session
