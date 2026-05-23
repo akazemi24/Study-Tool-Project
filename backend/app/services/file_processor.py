@@ -3,6 +3,13 @@ import docx
 import io
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+
+def clean_text(text: str) -> str:
+    text = text.replace("\x00", "")
+    text = "".join(char for char in text if char.isprintable() or char in "\n\t")
+    return text
+
+
 def extract_text_from_pdf(contents: bytes) -> str:
     text = ""
     with pdfplumber.open(io.BytesIO(contents)) as pdf:
@@ -10,14 +17,16 @@ def extract_text_from_pdf(contents: bytes) -> str:
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
-    return text
+    return clean_text(text)
 
 def extract_text_from_docx(contents: bytes) -> str:
     doc = docx.Document(io.BytesIO(contents))
-    return "\n".join([paragraph.text for paragraph in doc.paragraphs])
+    text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+    return clean_text(text)
 
 def extract_text_from_txt(contents: bytes) -> str:
-    return contents.decode("utf-8")
+    text = contents.decode("utf-8", errors="ignore")
+    return clean_text(text)
 
 def chunk_text(text: str) -> list[str]:
     splitter = RecursiveCharacterTextSplitter(

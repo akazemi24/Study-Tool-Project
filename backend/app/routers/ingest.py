@@ -1,8 +1,8 @@
 import uuid
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.database import get_db
+from sqlalchemy import select, update
+from app.database import get_db, AsyncSessionLocal
 from app.models import Document, Chunk
 from app.services.file_processor import process_file
 
@@ -21,40 +21,40 @@ async def save_document_to_db(
     document_id: uuid.UUID,
     filename: str,
     contents: bytes,
-    content_type: str,
-    db: AsyncSession
+    content_type: str
 ):
-    try:
-        result = await process_file(
-            filename=filename,
-            contents=contents,
-            content_type=content_type
-        )
-
-        for index, chunk_text in enumerate(result["chunks"]):
-            chunk = Chunk(
-                document_id=document_id,
-                content=chunk_text,
-                chunk_index=index
+    async with AsyncSessionLocal() as db:
+        try:
+            result = await process_file(
+                filename=filename,
+                contents=contents,
+                content_type=content_type
             )
-            db.add(chunk)
 
-        await db.execute(
-            Document.__table__.update()
-            .where(Document.id == document_id)
-            .values(status="ready")
-        )
+            for index, chunk_text in enumerate(result["chunks"]):
+                chunk = Chunk(
+                    document_id=document_id,
+                    content=chunk_text,
+                    chunk_index=index
+                )
+                db.add(chunk)
 
-        await db.commit()
+            await db.execute(
+                update(Document)
+                .where(Document.id == document_id)
+                .values(status="ready")
+            )
 
-    except Exception as e:
-        await db.execute(
-            Document.__table__.update()
-            .where(Document.id == document_id)
-            .values(status="error")
-        )
-        await db.commit()
-        raise e
+            await db.commit()
+
+        except Exception as e:
+            await db.execute(
+                update(Document)
+                .where(Document.id == document_id)
+                .values(status="error")
+            )
+            await db.commit()
+            print(f"Background task error: {e}")
 
 
 @router.post("/upload")
@@ -91,8 +91,7 @@ async def upload_file(
         document_id=document.id,
         filename=file.filename,
         contents=contents,
-        content_type=file.content_type,
-        db=db
+        content_type=file.content_type
     )
 
     return {
