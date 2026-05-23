@@ -20,6 +20,7 @@ target_metadata = Base.metadata
 database_url = os.environ.get("DATABASE_URL", "").replace(
     "postgresql+asyncpg://", "postgresql://"
 )
+print(f"DEBUG database_url: '{database_url}'")
 config.set_main_option("sqlalchemy.url", database_url)
 
 
