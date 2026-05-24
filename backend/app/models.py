@@ -50,7 +50,7 @@ class Embedding(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     chunk_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chunks.id"), nullable=False)
-    embedding: Mapped[Vector] = mapped_column(Vector(1536))
+    embedding: Mapped[Vector] = mapped_column(Vector(384))
 
     chunk: Mapped["Chunk"] = relationship(back_populates="embedding")
 

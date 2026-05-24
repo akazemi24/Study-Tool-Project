@@ -3,8 +3,9 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Backgro
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.database import get_db, AsyncSessionLocal
-from app.models import Document, Chunk
+from app.models import Document, Chunk, Embedding
 from app.services.file_processor import process_file
+from app.services.embedding_service import generate_embeddings_batch
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -30,7 +31,7 @@ async def save_document_to_db(
                 contents=contents,
                 content_type=content_type
             )
-
+            chunks = []
             for index, chunk_text in enumerate(result["chunks"]):
                 chunk = Chunk(
                     document_id=document_id,
@@ -38,6 +39,19 @@ async def save_document_to_db(
                     chunk_index=index
                 )
                 db.add(chunk)
+                chunks.append(chunk)
+
+            await db.flush()
+
+            chunk_texts = [chunk.content for chunk in chunks]
+            embeddings = generate_embeddings_batch(chunk_texts)
+
+            for chunk, embedding_vector in zip(chunks, embeddings):
+                embedding = Embedding(
+                    chunk_id=chunk.id,
+                    embedding=embedding_vector
+                )
+                db.add(embedding)
 
             await db.execute(
                 update(Document)
