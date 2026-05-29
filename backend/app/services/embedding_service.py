@@ -1,14 +1,15 @@
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
 EMBEDDING_DIMENSIONS = 384
 
 
 def generate_embedding(text: str) -> list[float]:
-    embedding = model.encode(text, convert_to_tensor=False)
-    return embedding.tolist()
+    embeddings = list(model.embed([text]))
+    return embeddings[0].tolist()
 
 
 def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    embeddings = model.encode(texts, convert_to_tensor=False)
+    embeddings = list(model.embed(texts))
     return [emb.tolist() for emb in embeddings]
