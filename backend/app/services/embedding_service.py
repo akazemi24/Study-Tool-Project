@@ -1,15 +1,23 @@
-from fastembed import TextEmbedding
+from openai import AsyncOpenAI
+import os
 
-model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
 
-EMBEDDING_DIMENSIONS = 384
-
-
-def generate_embedding(text: str) -> list[float]:
-    embeddings = list(model.embed([text]))
-    return embeddings[0].tolist()
+EMBEDDING_DIMENSIONS = 1536
 
 
-def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    embeddings = list(model.embed(texts))
-    return [emb.tolist() for emb in embeddings]
+async def generate_embedding(text: str) -> list[float]:
+    response = await client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+    return response.data[0].embedding
+
+
+async def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
+    response = await client.embeddings.create(
+        input=texts,
+        model="text-embedding-3-small"
+    )
+    response.data.sort(key=lambda x: x.index)
+    return [item.embedding for item in response.data]

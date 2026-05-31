@@ -44,7 +44,7 @@ async def save_document_to_db(
             await db.flush()
 
             chunk_texts = [chunk.content for chunk in chunks]
-            embeddings = generate_embeddings_batch(chunk_texts)
+            embeddings = await generate_embeddings_batch(chunk_texts)
 
             for chunk, embedding_vector in zip(chunks, embeddings):
                 embedding = Embedding(
