@@ -3,7 +3,7 @@ import axios from 'axios'
 // Create an Axios instance with default configuration
 // this is where you determine the base URL
 const api = axios.create({
-  baseURL: 'import.meta.env.VITE_API_URL' || 'http://localhost:8000',
+  baseURL: 'http://studytool-backend-env.eba-h9ihc2tv.us-east-2.elasticbeanstalk.com',
   headers: {
     'Content-Type': 'application/json'
   }
