@@ -3,7 +3,7 @@ import axios from 'axios'
 // Create an Axios instance with default configuration
 // this is where you determine the base URL
 const api = axios.create({
-  baseURL: 'http://studytool-backend-env.eba-h9ihc2tv.us-east-2.elasticbeanstalk.com',
+  baseURL: 'https://d225lnw6zls7ml.cloudfront.net',
   headers: {
     'Content-Type': 'application/json'
   }
