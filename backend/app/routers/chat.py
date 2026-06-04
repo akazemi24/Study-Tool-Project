@@ -35,7 +35,7 @@ async def ask_question(
             detail="Document is not ready for querying"
         )
     # Generate embedding for the question
-    question_embedding = await generate_embedding(request.question)
+    question_embedding = generate_embedding(request.question)
 
     embedding_str = "[" + ",".join(str(x) for x in question_embedding) + "]"
 
