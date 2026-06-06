@@ -5,20 +5,10 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 function LoginPage({ onLogin }) {
     const handleSuccess = async (credentialResponse) => {
         try {
-          const response = await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/google`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                credential: credentialResponse.credential
-              })
-            }
-          )
-      
-          if (!response.ok) throw new Error('Auth failed')
-      
-          const data = await response.json()
+          const response = await api.post('/auth/google', {
+            credential: credentialResponse.credential
+          })
+          const data = response.data
           localStorage.setItem('token', data.access_token)
           localStorage.setItem('user', JSON.stringify(data.user))
           onLogin(data.user)
