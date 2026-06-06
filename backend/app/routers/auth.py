@@ -1,5 +1,6 @@
 import uuid
-import httpx
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -15,8 +16,7 @@ security = HTTPBearer()
 
 
 class GoogleAuthRequest(BaseModel):
-    code: str
-    redirect_uri: str
+    credential: str
 
 
 async def get_current_user(
@@ -41,38 +41,22 @@ async def get_current_user(
 
 @router.post("/google")
 async def google_auth(request: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
-    async with httpx.AsyncClient() as client:
-        token_response = await client.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "code": request.code,
-                "client_id": settings.google_client_id,
-                "client_secret": settings.google_client_secret,
-                "redirect_uri": request.redirect_uri,
-                "grant_type": "authorization_code"
-            }
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        
+        idinfo = id_token.verify_oauth2_token(
+            request.credential,
+            google_requests.Request(),
+            settings.google_client_id
         )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid token: {str(e)}")
 
-    if token_response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to exchange code with Google")
-
-    token_data = token_response.json()
-    access_token = token_data.get("access_token")
-
-    async with httpx.AsyncClient() as client:
-        profile_response = await client.get(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-
-    if profile_response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to get user profile from Google")
-
-    profile = profile_response.json()
-    google_id = profile.get("id")
-    email = profile.get("email")
-    name = profile.get("name")
-    avatar_url = profile.get("picture")
+    google_id = idinfo.get("sub")
+    email = idinfo.get("email")
+    name = idinfo.get("name")
+    avatar_url = idinfo.get("picture")
 
     result = await db.execute(select(User).where(User.google_id == google_id))
     user = result.scalar_one_or_none()
@@ -109,7 +93,6 @@ async def google_auth(request: GoogleAuthRequest, db: AsyncSession = Depends(get
             "avatar_url": user.avatar_url
         }
     }
-
 
 @router.get("/me")
 async def get_me(current_user: User = Depends(get_current_user)):
