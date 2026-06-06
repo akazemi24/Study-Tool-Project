@@ -6,7 +6,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import ingest, flashcards, chat, quiz
+from app.routers import ingest, flashcards, chat, quiz, auth
 
 app = FastAPI(title=settings.app_name)
 
@@ -24,6 +24,7 @@ app.include_router(ingest.router)
 app.include_router(flashcards.router)
 app.include_router(chat.router)
 app.include_router(quiz.router)
+app.include_router(auth.router)
 
 @app.get("/health")
 def health_check():
