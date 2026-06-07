@@ -41,13 +41,6 @@ function Navbar({ user, onLogout }) {
             Quiz
           </NavLink>
           <div className="flex items-center gap-3 ml-4 pl-4 border-l border-gray-200">
-            {user?.avatar_url && (
-              <img
-                src={user.avatar_url}
-                alt={user.name}
-                className="w-8 h-8 rounded-full"
-              />
-            )}
             <span className="text-gray-600 text-sm">{user?.name}</span>
             <button
               onClick={onLogout}
