@@ -1,6 +1,4 @@
 import uuid
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -41,6 +39,8 @@ async def get_current_user(
 
 @router.post("/google")
 async def google_auth(request: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as google_requests
     try:
         from google.oauth2 import id_token
         from google.auth.transport import requests as google_requests

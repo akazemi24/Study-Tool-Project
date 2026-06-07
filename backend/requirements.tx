@@ -16,7 +16,7 @@ fastapi==0.136.1
 filelock==3.29.0
 flatbuffers==25.12.19
 fsspec==2026.4.0
-google-auth==2.53.0
+google-auth==2.29.0
 greenlet==3.5.1
 gunicorn==26.0.0
 h11==0.16.0
