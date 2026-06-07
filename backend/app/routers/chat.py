@@ -7,6 +7,8 @@ from app.database import get_db
 from app.models import Document, Chunk, Embedding
 from app.services.chat_service import get_socratic_response
 from app.services.embedding_service import generate_embedding
+from app.routers.auth import get_current_user
+from app.models import Document, Chunk, Embedding, User
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -19,10 +21,14 @@ class ChatRequest(BaseModel):
 @router.post("/ask")
 async def ask_question(
     request: ChatRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
 ):
     doc_result = await db.execute(
-        select(Document).where(Document.id == request.document_id)
+        select(Document).where(
+            Document.id == request.document_id,
+            Document.user_id == current_user.id
+        )
     )
     document = doc_result.scalar_one_or_none()
 

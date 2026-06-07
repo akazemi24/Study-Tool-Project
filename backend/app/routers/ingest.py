@@ -6,6 +6,8 @@ from app.database import get_db, AsyncSessionLocal
 from app.models import Document, Chunk, Embedding
 from app.services.file_processor import process_file
 from app.services.embedding_service import generate_embeddings_batch
+from app.routers.auth import get_current_user
+from app.models import Document, Chunk, Embedding, User
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -75,7 +77,8 @@ async def save_document_to_db(
 async def upload_file(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(
@@ -92,7 +95,7 @@ async def upload_file(
         )
 
     document = Document(
-        user_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        user_id=current_user.id,
         filename=file.filename,
         status="processing"
     )

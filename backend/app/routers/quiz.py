@@ -7,12 +7,10 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models import Flashcard, QuizProgress
 from app.services.quiz_service import sm2
+from app.routers.auth import get_current_user
+from app.models import Flashcard, QuizProgress, User
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
-
-# replace this later
-PLACEHOLDER_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
-
 
 class RatingRequest(BaseModel):
     flashcard_id: uuid.UUID
@@ -22,13 +20,14 @@ class RatingRequest(BaseModel):
 @router.get("/due/{document_id}")
 async def get_due_cards(
     document_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     # get the correct flashcards for this document and user
     flashcards_result = await db.execute(
         select(Flashcard).where(
             Flashcard.document_id == document_id,
-            Flashcard.user_id == PLACEHOLDER_USER_ID
+            Flashcard.user_id == current_user.id
         )
     )
     flashcards = flashcards_result.scalars().all()
@@ -41,7 +40,7 @@ async def get_due_cards(
     progress_result = await db.execute(
         select(QuizProgress).where(
             QuizProgress.flashcard_id.in_(flashcard_ids),
-            QuizProgress.user_id == PLACEHOLDER_USER_ID
+            QuizProgress.user_id == current_user.id
         )
     )
     # create a dict of flashcard_id to progress for easy lookup
@@ -83,7 +82,8 @@ async def get_due_cards(
 @router.post("/rate")
 async def rate_card(
     request: RatingRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
 ):
     if request.rating < 0 or request.rating > 5:
         raise HTTPException(
@@ -102,7 +102,7 @@ async def rate_card(
     progress_result = await db.execute(
         select(QuizProgress).where(
             QuizProgress.flashcard_id == request.flashcard_id,
-            QuizProgress.user_id == PLACEHOLDER_USER_ID
+            QuizProgress.user_id == current_user.id
         )
     )
     progress = progress_result.scalar_one_or_none()
@@ -110,7 +110,7 @@ async def rate_card(
     if progress is None:
         new_ease, new_interval, next_review = sm2(2.5, 1, request.rating)
         progress = QuizProgress(
-            user_id=PLACEHOLDER_USER_ID,
+            user_id=current_user.id,
             flashcard_id=request.flashcard_id,
             ease_factor=new_ease,
             interval_days=new_interval,

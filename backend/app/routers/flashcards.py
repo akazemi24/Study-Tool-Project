@@ -5,6 +5,8 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models import Document, Chunk, Flashcard
 from app.services.flashcard_service import generate_flashcards_from_chunks
+from app.routers.auth import get_current_user
+from app.models import Document, Chunk, Flashcard, User
 
 router = APIRouter(prefix="/flashcards", tags=["flashcards"])
 
@@ -12,10 +14,14 @@ router = APIRouter(prefix="/flashcards", tags=["flashcards"])
 @router.post("/generate/{document_id}")
 async def generate_flashcards(
     document_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
 ):
     doc_result = await db.execute(
-        select(Document).where(Document.id == document_id)
+        select(Document).where(
+            Document.id == document_id,
+            Document.user_id == current_user.id
+        )
     )
     document = doc_result.scalar_one_or_none()
 
@@ -31,7 +37,10 @@ async def generate_flashcards(
         )
     
     existing = await db.execute(
-        select(Flashcard).where(Flashcard.document_id == document_id)
+        select(Flashcard).where(
+            Flashcard.document_id == document_id,
+            Flashcard.user_id == current_user.id
+        )
     )
 
     # Check if flashcards already exist for this document
@@ -60,8 +69,7 @@ async def generate_flashcards(
     for card in flashcard_data:
         flashcard = Flashcard(
             document_id=document_id,
-            # hard coded for now
-            user_id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+            user_id=current_user.id,
             question=card["question"],
             answer=card["answer"]
         )
@@ -90,11 +98,15 @@ async def generate_flashcards(
 @router.get("/{document_id}")
 async def get_flashcards(
     document_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
 ):
     result = await db.execute(
         select(Flashcard)
-        .where(Flashcard.document_id == document_id)
+        .where(
+            Flashcard.document_id == document_id,
+            Flashcard.user_id == current_user.id
+        )
         .order_by(Flashcard.created_at)
     )
     flashcards = result.scalars().all()
