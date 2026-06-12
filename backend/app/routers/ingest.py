@@ -137,3 +137,29 @@ async def get_document_status(
         "filename": document.filename,
         "status": document.status
     }
+
+@router.get("/documents")
+async def get_documents(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Document)
+        .where(
+            Document.user_id == current_user.id,
+            Document.status == "ready"
+        )
+        .order_by(Document.uploaded_at.desc())
+    )
+    documents = result.scalars().all()
+
+    return {
+        "documents": [
+            {
+                "id": str(doc.id),
+                "filename": doc.filename,
+                "uploaded_at": str(doc.uploaded_at)
+            }
+            for doc in documents
+        ]
+    }

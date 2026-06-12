@@ -75,4 +75,9 @@ export const rateCard = async (flashcardId, rating) => {
   return response.data
 }
 
+export const getDocuments = async () => {
+  const response = await api.get('/ingest/documents')
+  return response.data
+}
+
 export default api
