@@ -232,4 +232,4 @@ Every push to `main` triggers an automatic Amplify rebuild. Backend deploys via 
 
 ## Author
 
-Armita Kazemi — [GitHub](https://github.com/akazemi24) — Princeton University, CS '26
+Armita Kazemi — [GitHub](https://github.com/akazemi24) — Princeton University, CS '28
